@@ -6,8 +6,9 @@
 
 // Common filler/particle words to strip
 const FILLER_WORDS = [
-  '帮我', '一个', '的', '一下', '吧', '啊', '吗', '呢', '哦', '嗯',
+  '帮我', '请帮我', '一个', '的', '一下', '吧', '啊', '吗', '呢', '哦', '嗯',
   '一下', '这个', '那个', '请', '给', '把',
+  '我', '我的', '我们的', '所有的', '所有的',
 ];
 
 // Intent-related words to remove (already handled by intent.js but safety net)

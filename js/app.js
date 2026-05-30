@@ -320,11 +320,12 @@ async function executeIntent(finalResult) {
           '| start:', e.startTime.toISOString());
       });
 
-      // Detect "delete ALL" intent: explicit keywords + generic calendar terms used alone
-      const deleteAllExplicit = /^(所有|全部|一切|全删|清空|所有安排|所有事件|全部安排|全部事件|所有的安排|所有的事件)$/;
-      // Generic calendar words used alone → user means "all events", not a specific event title
-      const genericWords = /^(事件|安排|事项|日程|活动|会议|所有事|一切事)$/;
-      const isDeleteAll = title && (deleteAllExplicit.test(title.trim()) || genericWords.test(title.trim()));
+      // Detect "delete ALL" intent:
+      // 1. Title CONTAINS all/全部 keywords (e.g. "我所有安排", "所有的会议")
+      // 2. Title IS a standalone generic word (e.g. "事件", "安排")
+      const hasAllKeyword = /所有|全部|一切|全删|清空/.test(title || '');
+      const isStandaloneGeneric = /^(事件|安排|事项|日程|活动|会议|所有事|一切事)$/.test((title || '').trim());
+      const isDeleteAll = hasAllKeyword || isStandaloneGeneric;
 
       // Build date range if datetime is valid
       let dateFilter = {};
