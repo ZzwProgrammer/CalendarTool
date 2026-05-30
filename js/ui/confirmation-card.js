@@ -286,6 +286,8 @@ export const ConfirmationCard = {
     currentMode = 'normal';
     multiChoiceCallback = null;
     state.setState({ isCardVisible: false, cardMode: 'normal' });
+    // Notify app to stop voice confirmation listening
+    state.emit('card:closed');
   },
 
   /**

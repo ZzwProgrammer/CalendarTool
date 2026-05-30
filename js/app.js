@@ -355,12 +355,17 @@ function startConfirmationListening() {
     },
   });
 
-  // Start after a short delay
+  // Start after a short delay, and listen for card close
   setTimeout(() => {
     if (state.getState().isCardVisible && confirmRecognizer) {
       confirmRecognizer.start();
     }
   }, 500);
+
+  // Auto-stop when card is closed manually
+  state.on('card:closed', () => {
+    stopConfirmationListening();
+  });
 }
 
 function stopConfirmationListening() {
