@@ -247,6 +247,17 @@ function handleVoiceError({ code, message }) {
 }
 
 // ---- Intent Execution ----
+// Helper for multi-choice delete selection
+async function selectAndDelete(event) {
+  await EventStore.remove(event.id);
+  const events = await EventStore.getAll();
+  state.setState({ events, totalEvents: events.length });
+  state.emit('events:changed', 'removed', event);
+  CalendarController.refresh();
+  updateStatusBar();
+  TTS.speak(`已删除${event.title}`);
+}
+
 async function executeIntent(finalResult) {
   let { intent, datetime, endDatetime, title, originalDatetime, correctedText } = finalResult;
 
@@ -306,49 +317,96 @@ async function executeIntent(finalResult) {
       console.log('[Delete] === DB中共有', allEvents.length, '个事件 ===');
       allEvents.forEach(e => {
         console.log('  - id:', e.id, '| title:', e.title,
-          '| startTime:', e.startTime.toISOString(),
-          '| source:', e.source);
+          '| start:', e.startTime.toISOString());
       });
 
-      // Build date range: use exact day if datetime is valid, otherwise search all events
+      // Detect "delete ALL" intent: 所有/全部/一切/全删/清空
+      const deleteAllKeywords = /^(所有|全部|一切|全删|清空|所有安排|所有事件|全部安排|全部事件|所有的安排|所有的事件)$/;
+      const isDeleteAll = title && deleteAllKeywords.test(title.trim());
+
+      // Build date range if datetime is valid
       let dateFilter = {};
+      let hasDate = false;
       if (datetime && !isNaN(datetime.getTime())) {
         dateFilter = {
           startDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 0, 0, 0),
           endDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59),
         };
-        console.log('[Delete] 搜索日期范围:', dateFilter.startDate.toISOString(), '~', dateFilter.endDate.toISOString());
-      } else {
-        console.log('[Delete] ⚠️ datetime 无效，直接全局搜索');
+        hasDate = true;
       }
 
-      console.log('[Delete] 搜索关键词:', JSON.stringify(title));
-      console.log('[Delete] dateFilter:', JSON.stringify(dateFilter));
+      // Case A: "删除明天所有安排" — bulk delete on a specific date
+      if (isDeleteAll && hasDate) {
+        const dateEvents = await EventStore.query(dateFilter);
+        const dateLabel = `${datetime.getMonth() + 1}月${datetime.getDate()}日`;
 
-      let matches = [];
-      if (dateFilter.startDate) {
-        matches = await EventStore.searchByTitle(title, dateFilter);
-      }
-
-      // If no match on exact date (or no date provided), search ALL events by title
-      if (matches.length === 0) {
-        const allByTitle = await EventStore.searchByTitle(title);
-        // Add logging for debug
-        console.log('[Delete] Exact date search:', dateFilter, '→ 0 matches');
-        console.log('[Delete] Broad search (all dates) →', allByTitle.length, 'matches');
-
-        if (allByTitle.length === 0) {
-          const dateStr = datetime && !isNaN(datetime.getTime())
-            ? `${datetime.getMonth() + 1}月${datetime.getDate()}日`
-            : '所有日期中';
-          TTS.speak(`${dateStr}没有找到名为"${title}"的事件`);
-          Toasts.show('未找到匹配的事件', { type: 'warning' });
+        if (dateEvents.length === 0) {
+          TTS.speak(`${dateLabel}没有安排`);
+          Toasts.show(`${dateLabel} 无事件可删除`, { type: 'info' });
           break;
         }
-        matches = allByTitle;
+
+        // Show confirmation with event list
+        ConfirmationCard.showMultiChoice(dateEvents, async (selected) => {
+          // Single delete from the list (user picks one from the bulk list)
+          await EventStore.remove(selected.id);
+          const evts = await EventStore.getAll();
+          state.setState({ events: evts, totalEvents: evts.length });
+          state.emit('events:changed', 'removed', selected);
+          CalendarController.refresh();
+          updateStatusBar();
+          TTS.speak(`已删除${selected.title}`);
+        });
+        TTS.speak(`${dateLabel}共有${dateEvents.length}个事件，请选择要删除的事件，或说"删除${dateLabel}所有事件"来全部删除`);
+        break;
+      }
+
+      // Case B: "删除明天所有事件" with "全部"/"所有" → bulk delete all on date
+      if (isDeleteAll && hasDate) {
+        // Already handled above
+        break;
+      }
+
+      // Case C: Normal title-based delete with optional date filter
+      let matches = [];
+      if (hasDate && title && title.trim()) {
+        // Date + Title: precise search
+        matches = await EventStore.searchByTitle(title.trim(), dateFilter);
+        console.log('[Delete] Date+Title search:', title, 'on', dateFilter.startDate?.toISOString(), '→', matches.length);
+      } else if (hasDate && (!title || !title.trim())) {
+        // Date only, no title: list all events on that date for user to pick
+        matches = await EventStore.query(dateFilter);
+        console.log('[Delete] Date-only search →', matches.length, 'events');
+      } else if (title && title.trim()) {
+        // Title only, no date: global search
+        matches = await EventStore.searchByTitle(title.trim());
+        console.log('[Delete] Title-only global search:', title, '→', matches.length);
+      } else {
+        TTS.speak('请指定要删除的事件名称或日期');
+        Toasts.show('未指定删除条件', { type: 'warning' });
+        break;
+      }
+
+      // Handle results
+      if (matches.length === 0) {
+        // No exact match found — try broader search
+        if (hasDate && title && title.trim()) {
+          // Try global title search as fallback
+          const globalMatches = await EventStore.searchByTitle(title.trim());
+          if (globalMatches.length > 0) {
+            ConfirmationCard.showMultiChoice(globalMatches, selectAndDelete);
+            TTS.speak(`未在指定日期找到，但找到${globalMatches.length}个标题含"${title.trim()}"的事件`);
+            break;
+          }
+        }
+        const dateStr = hasDate ? `${datetime.getMonth() + 1}月${datetime.getDate()}日` : '';
+        TTS.speak(`${dateStr}没有找到${title ? '名为"' + title + '"的' : ''}事件`);
+        Toasts.show('未找到匹配的事件', { type: 'warning' });
+        break;
       }
 
       if (matches.length === 1) {
+        // Single match: delete directly
         const target = matches[0];
         await EventStore.remove(target.id);
         const events = await EventStore.getAll();
@@ -370,16 +428,8 @@ async function executeIntent(finalResult) {
           },
         };
       } else {
-        // Multiple matches — show choice card
-        ConfirmationCard.showMultiChoice(matches, async (selected) => {
-          await EventStore.remove(selected.id);
-          const events = await EventStore.getAll();
-          state.setState({ events, totalEvents: events.length });
-          state.emit('events:changed', 'removed', selected);
-          CalendarController.refresh();
-          updateStatusBar();
-          TTS.speak(`已删除${selected.title}`);
-        });
+        // Multiple matches: show choice card
+        ConfirmationCard.showMultiChoice(matches, selectAndDelete);
         TTS.speak(`找到${matches.length}个匹配事件，请选择要删除的事件`);
       }
       break;
