@@ -528,11 +528,43 @@ function wireEventListeners() {
     }
   });
 
-  // Keyboard shortcut
+  // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
+    // Ctrl+Space: toggle microphone
     if (e.key === ' ' && e.ctrlKey) {
       e.preventDefault();
       toggleMic();
+    }
+    // Ctrl+Z: undo last action
+    if (e.key === 'z' && e.ctrlKey && !e.shiftKey) {
+      e.preventDefault();
+      const entry = state.popUndo();
+      if (entry && entry.undo) {
+        entry.undo().then(() => {
+          Toasts.show('已撤销', { type: 'info', duration: 2000 });
+        }).catch(err => {
+          console.error('[App] Undo failed:', err);
+          Toasts.show('撤销失败', { type: 'error' });
+        });
+      } else {
+        Toasts.show('没有可撤销的操作', { type: 'info', duration: 2000 });
+      }
+    }
+    // Ctrl+Enter: confirm current card if visible
+    if (e.key === 'Enter' && e.ctrlKey) {
+      const { isCardVisible } = state.getState();
+      if (isCardVisible) {
+        e.preventDefault();
+        ConfirmationCard.confirm();
+      }
+    }
+    // Escape: cancel current card if visible
+    if (e.key === 'Escape') {
+      const { isCardVisible } = state.getState();
+      if (isCardVisible) {
+        e.preventDefault();
+        ConfirmationCard.cancel();
+      }
     }
   });
 
