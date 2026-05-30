@@ -9,9 +9,9 @@ import { CONFIG } from '../config.js';
  * Intent keyword definitions with Chinese labels.
  */
 const INTENT_KEYWORDS = {
-  add: ['添加', '新增', '增加', '安排', '创建', '加入'],
+  add: ['添加', '新增', '增加', '创建', '加入', '添加一个', '帮我添加'],
   delete: ['删除', '取消', '移除', '去掉', '清除'],
-  view: ['查看', '查询', '显示', '有什么', '有什么安排', '告诉我', '列出'],
+  view: ['查看', '查询', '显示', '有什么安排', '有什么', '告诉我', '列出', '看一下', '看下'],
   reschedule: ['修改', '改到', '改成', '调整', '移动', '推迟', '提前'],
 };
 
@@ -41,12 +41,13 @@ export function classifyIntent(text) {
   let bestKeyword = '';
 
   // First pass: exact match (highest confidence)
+  // Tie-breaker: longer keyword = more specific match wins
   for (const [intent, keywords] of Object.entries(INTENT_KEYWORDS)) {
     for (const kw of keywords) {
       if (text.includes(kw)) {
-        // Exact match is high confidence
         const confidence = 0.95;
-        if (confidence > bestConfidence) {
+        if (confidence > bestConfidence ||
+            (confidence === bestConfidence && kw.length > bestKeyword.length)) {
           bestConfidence = confidence;
           bestIntent = intent;
           bestKeyword = kw;
