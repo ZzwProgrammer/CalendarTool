@@ -616,6 +616,7 @@ function renderHistory() {
   for (const entry of commandHistory) {
     const item = document.createElement('div');
     item.className = 'history-item';
+    item.title = `${texts[entry.intent] || '未知'}: ${entry.originalText}`; // hover tooltip shows full text
     const time = new Date(entry.timestamp);
     const timeStr = `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`;
     item.innerHTML = `
@@ -623,6 +624,28 @@ function renderHistory() {
       <span class="history-text">${entry.originalText}</span>
       <span class="history-time">${timeStr}</span>
     `;
+    // Click to expand/collapse
+    item.addEventListener('click', () => {
+      const textSpan = item.querySelector('.history-text');
+      if (item.classList.contains('expanded')) {
+        item.classList.remove('expanded');
+        textSpan.style.whiteSpace = 'nowrap';
+        textSpan.style.overflow = 'hidden';
+        textSpan.style.textOverflow = 'ellipsis';
+      } else {
+        // Collapse all other expanded items
+        list.querySelectorAll('.history-item.expanded').forEach(el => {
+          el.classList.remove('expanded');
+          const ts = el.querySelector('.history-text');
+          if (ts) { ts.style.whiteSpace = 'nowrap'; ts.style.overflow = 'hidden'; ts.style.textOverflow = 'ellipsis'; }
+        });
+        item.classList.add('expanded');
+        textSpan.style.whiteSpace = 'normal';
+        textSpan.style.overflow = 'visible';
+        textSpan.style.textOverflow = 'unset';
+        textSpan.style.wordBreak = 'break-all';
+      }
+    });
     list.appendChild(item);
   }
 }

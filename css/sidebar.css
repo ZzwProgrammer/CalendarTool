@@ -122,7 +122,7 @@
 
 .history-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
@@ -135,9 +135,15 @@
   background: var(--color-gray-50);
 }
 
+.history-item.expanded {
+  background: var(--color-primary-light);
+  padding: var(--space-sm);
+}
+
 .history-item .history-icon {
   font-size: var(--font-size-md);
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .history-item .history-text {
@@ -151,4 +157,5 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   flex-shrink: 0;
+  margin-top: 1px;
 }
