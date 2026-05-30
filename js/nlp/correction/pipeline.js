@@ -18,7 +18,9 @@ import { extractTitle } from '../title-extractor.js';
  * @returns {Promise<Object>} Full CorrectionResult
  */
 export async function runCorrectionPipeline(originalText) {
-  const referenceDate = state.getState().currentDate || new Date();
+  // ALWAYS use real today for relative date parsing (明天/后天/下周 etc.)
+  // The calendar view date must NOT influence voice command interpretation
+  const referenceDate = new Date();
 
   /** @type {CorrectionResult} */
   const result = {
