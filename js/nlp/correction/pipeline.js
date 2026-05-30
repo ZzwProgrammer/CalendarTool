@@ -143,6 +143,13 @@ export async function runCorrectionPipeline(originalText) {
   result.final.title = titleResult.title;
   result.final.titleConfidence = titleResult.confidence;
 
+  // Debug log
+  console.log('[Pipeline] Intent:', intentResult.intent,
+    '| Time:', timeResult.datetime ? timeResult.datetime.toLocaleString() : 'null',
+    '| Title:', titleResult.title,
+    '| L1 conf:', result.layer1.confidence,
+    '| Final conf:', result.final.confidence);
+
   // ==========================================
   // LAYER 3: Determine action
   // ==========================================

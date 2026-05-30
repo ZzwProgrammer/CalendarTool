@@ -127,6 +127,14 @@ async function handleVoiceResult({ text, isFinal }) {
   try {
     // Run the full correction pipeline
     const result = await runCorrectionPipeline(text);
+    console.log('[App] Pipeline result:', {
+      intent: result.final.intent,
+      title: result.final.title,
+      datetime: result.final.datetime ? result.final.datetime.toISOString() : null,
+      confidence: result.final.confidence,
+      action: result.final.action,
+      suspectFields: result.final.suspectFields,
+    });
 
     if (!result || result.final.intent === 'unknown') {
       TTS.speak('抱歉，我没有理解您的意图，请再说一次');
@@ -203,6 +211,9 @@ function handleVoiceError({ code, message }) {
 // ---- Intent Execution ----
 async function executeIntent(finalResult) {
   const { intent, datetime, endDatetime, title, originalDatetime, correctedText } = finalResult;
+  console.log('[App] executeIntent:', intent,
+    '| title:', title,
+    '| datetime:', datetime ? datetime.toISOString() : 'null');
 
   switch (intent) {
     case 'add': {
@@ -237,28 +248,54 @@ async function executeIntent(finalResult) {
     }
 
     case 'delete': {
-      const matches = await EventStore.searchByTitle(title, {
-        startDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 0, 0, 0),
-        endDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59),
-      });
+      // Build date range: use exact day if datetime is valid, otherwise search all events
+      let dateFilter = {};
+      if (datetime && !isNaN(datetime.getTime())) {
+        dateFilter = {
+          startDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 0, 0, 0),
+          endDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59),
+        };
+      }
 
+      let matches = [];
+      if (dateFilter.startDate) {
+        matches = await EventStore.searchByTitle(title, dateFilter);
+      }
+
+      // If no match on exact date (or no date provided), search ALL events by title
       if (matches.length === 0) {
-        TTS.speak(`${datetime.getMonth() + 1}月${datetime.getDate()}日没有找到名为"${title}"的事件`);
-        Toasts.show('未找到匹配的事件', { type: 'warning' });
-      } else if (matches.length === 1) {
-        await EventStore.remove(matches[0].id);
+        const allByTitle = await EventStore.searchByTitle(title);
+        // Add logging for debug
+        console.log('[Delete] Exact date search:', dateFilter, '→ 0 matches');
+        console.log('[Delete] Broad search (all dates) →', allByTitle.length, 'matches');
+
+        if (allByTitle.length === 0) {
+          const dateStr = datetime && !isNaN(datetime.getTime())
+            ? `${datetime.getMonth() + 1}月${datetime.getDate()}日`
+            : '所有日期中';
+          TTS.speak(`${dateStr}没有找到名为"${title}"的事件`);
+          Toasts.show('未找到匹配的事件', { type: 'warning' });
+          break;
+        }
+        matches = allByTitle;
+      }
+
+      if (matches.length === 1) {
+        const target = matches[0];
+        await EventStore.remove(target.id);
         const events = await EventStore.getAll();
         state.setState({ events, totalEvents: events.length });
-        state.emit('events:changed', 'removed', matches[0]);
+        state.emit('events:changed', 'removed', target);
         CalendarController.refresh();
         updateStatusBar();
-        TTS.speak(`已删除${matches[0].title}`);
+        const eventDateStr = `${target.startTime.getMonth() + 1}月${target.startTime.getDate()}日`;
+        TTS.speak(`已删除${eventDateStr}的${target.title}`);
         undoDataForCurrentAction = {
           undo: async () => {
-            await EventStore.add(matches[0]);
+            await EventStore.add(target);
             const evts = await EventStore.getAll();
             state.setState({ events: evts, totalEvents: evts.length });
-            state.emit('events:changed', 'added', matches[0]);
+            state.emit('events:changed', 'added', target);
             CalendarController.refresh();
             updateStatusBar();
             TTS.speak('已撤销删除操作');
@@ -281,6 +318,11 @@ async function executeIntent(finalResult) {
     }
 
     case 'view': {
+      if (!datetime || isNaN(datetime.getTime())) {
+        TTS.speak('请指定要查看的日期，比如"查看明天的安排"');
+        Toasts.show('未指定日期', { type: 'warning' });
+        break;
+      }
       const viewStart = new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 0, 0, 0);
       const viewEnd = new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59);
       const viewEvents = await EventStore.query({ startDate: viewStart, endDate: viewEnd });
