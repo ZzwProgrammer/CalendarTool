@@ -210,9 +210,24 @@ function handleVoiceError({ code, message }) {
 
 // ---- Intent Execution ----
 async function executeIntent(finalResult) {
-  const { intent, datetime, endDatetime, title, originalDatetime, correctedText } = finalResult;
+  let { intent, datetime, endDatetime, title, originalDatetime, correctedText } = finalResult;
+
+  // Fallback: if title is missing/empty, try to infer from correctedText
+  if (!title && finalResult.correctedText) {
+    // Re-run a quick title extraction as safety net
+    const fallbackTitle = finalResult.correctedText
+      .replace(/添加|新增|安排|创建|删除|取消|移除|查看|查询|显示|修改|调整|明天|后天|今天|昨天|上午|下午|晚上|凌晨|中午|\d+点\d*分?|半/g, '')
+      .replace(/[，。！？、；：""''（）【】《》\s]+/g, ' ')
+      .replace(/帮我|一个|一下|吧|啊|吗|呢|的/g, '')
+      .trim();
+    if (fallbackTitle) {
+      title = fallbackTitle;
+      console.log('[App] ⚠️ title fallback from correctedText:', title);
+    }
+  }
+
   console.log('[App] executeIntent:', intent,
-    '| title:', title,
+    '| title:', title || '(空)',
     '| datetime:', datetime ? datetime.toISOString() : 'null');
 
   switch (intent) {

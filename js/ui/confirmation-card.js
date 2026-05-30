@@ -220,11 +220,25 @@ export const ConfirmationCard = {
     const titleInput = document.querySelector('[data-field="title"]');
     const timeInput = document.querySelector('[data-field="datetime"]');
 
+    console.log('[Card] confirm() — currentResult.final:', JSON.stringify({
+      intent: currentResult.final.intent,
+      title: currentResult.final.title,
+      datetime: currentResult.final.datetime ? currentResult.final.datetime.toISOString() : null,
+    }));
+    console.log('[Card] titleInput:', titleInput ? titleInput.value : 'NULL');
+    console.log('[Card] timeInput:', timeInput ? timeInput.value : 'NULL');
+
     const finalResult = {
       ...currentResult.final,
     };
 
-    if (titleInput) finalResult.title = titleInput.value;
+    // Only override title from input if the input has a non-empty value
+    if (titleInput && titleInput.value.trim()) {
+      finalResult.title = titleInput.value.trim();
+    } else if (titleInput && !titleInput.value.trim()) {
+      // Input is empty — keep the pipeline's title. If pipeline title is also empty, use fallback
+      console.log('[Card] titleInput is empty, keeping pipeline title:', finalResult.title);
+    }
     if (timeInput && timeInput.value) finalResult.datetime = new Date(timeInput.value);
 
     // Learn from any user edits
