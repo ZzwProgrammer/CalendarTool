@@ -216,30 +216,26 @@ export const ConfirmationCard = {
   async confirm() {
     if (currentMode === 'multi-choice') return;
 
-    // Read fields from the card (may have been edited by user)
-    const titleInput = document.querySelector('[data-field="title"]');
-    const timeInput = document.querySelector('[data-field="datetime"]');
+    // Read fields from the card — scope query to card container to avoid grabbing wrong elements
+    const card = container ? container.querySelector('.card') : null;
+    const titleInput = card ? card.querySelector('[data-field="title"]') : null;
+    const timeInput = card ? card.querySelector('[data-field="datetime"]') : null;
 
-    console.log('[Card] confirm() — currentResult.final:', JSON.stringify({
-      intent: currentResult.final.intent,
-      title: currentResult.final.title,
-      datetime: currentResult.final.datetime ? currentResult.final.datetime.toISOString() : null,
-    }));
-    console.log('[Card] titleInput:', titleInput ? titleInput.value : 'NULL');
-    console.log('[Card] timeInput:', timeInput ? timeInput.value : 'NULL');
+    console.log('[Card] confirm() — card found:', !!card,
+      '| titleInput:', titleInput ? titleInput.value : '(null)',
+      '| timeInput:', timeInput ? timeInput.value : '(null)');
+    console.log('[Card] currentResult.final.title:', currentResult?.final?.title);
 
-    const finalResult = {
-      ...currentResult.final,
-    };
+    // Build finalResult from pipeline output — this is the SOURCE OF TRUTH
+    const finalResult = { ...currentResult.final };
 
-    // Only override title from input if the input has a non-empty value
-    if (titleInput && titleInput.value.trim()) {
+    // Only override from DOM inputs if they exist AND have content
+    if (titleInput && titleInput.value && titleInput.value.trim()) {
       finalResult.title = titleInput.value.trim();
-    } else if (titleInput && !titleInput.value.trim()) {
-      // Input is empty — keep the pipeline's title. If pipeline title is also empty, use fallback
-      console.log('[Card] titleInput is empty, keeping pipeline title:', finalResult.title);
     }
-    if (timeInput && timeInput.value) finalResult.datetime = new Date(timeInput.value);
+    if (timeInput && timeInput.value) {
+      finalResult.datetime = new Date(timeInput.value);
+    }
 
     // Learn from any user edits
     if (currentResult.layer1 && currentResult.layer1.corrections) {
