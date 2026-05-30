@@ -194,7 +194,13 @@ function regexParse(text, referenceDate) {
 
     targetDate.setHours(hour, minute, 0, 0);
     datetime = new Date(targetDate);
-    matchedText = (dayMatched ? dayMatched : '') + timeMatch[0];
+    // If absDateMatch already captured the time (e.g. "6月2号早上九点"),
+    // don't double-append the time portion from timeMatch
+    if (dayMatched && dayMatched.includes(timeMatch[0])) {
+      matchedText = dayMatched;
+    } else {
+      matchedText = (dayMatched ? dayMatched : '') + timeMatch[0];
+    }
     confidence = dayMatched ? 0.65 : 0.45;
   } else if (dayMatched) {
     // Date without time

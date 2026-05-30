@@ -9,6 +9,7 @@ const FILLER_WORDS = [
   '帮我', '请帮我', '一个', '的', '一下', '吧', '啊', '吗', '呢', '哦', '嗯',
   '一下', '这个', '那个', '请', '给', '把',
   '我', '我的', '我们的', '所有的', '所有的',
+  '名为', '叫做', '叫', '呃', '就是', '那个', '哪个', '什么',
 ];
 
 // Intent-related words to remove (already handled by intent.js but safety net)
