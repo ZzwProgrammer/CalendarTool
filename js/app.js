@@ -26,6 +26,44 @@ let recognizer = null;
 let confirmRecognizer = null;
 let undoDataForCurrentAction = null;
 
+// ---- View Result Card ----
+function showViewResultCard(viewEvents, dateLabel) {
+  const cardContainer = document.getElementById('confirmation-card-container');
+  if (!cardContainer) return;
+
+  const itemsHtml = viewEvents.map(e => {
+    const timeStr = `${String(e.startTime.getHours()).padStart(2, '0')}:${String(e.startTime.getMinutes()).padStart(2, '0')}`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--color-border)">
+      <span style="font-weight:500">${e.title}</span>
+      <span style="font-size:13px;color:var(--color-text-secondary)">${timeStr}</span>
+    </div>`;
+  }).join('');
+
+  const currentCard = document.querySelector('.view-result-card');
+  if (currentCard) currentCard.remove();
+
+  const card = document.createElement('div');
+  card.className = 'card view-result-card';
+  card.style.animation = 'card-slide-in 0.3s ease';
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="card-badge badge-intent-view">查看</span>
+      <span style="font-size:13px;color:var(--color-text-secondary)">${dateLabel} · ${viewEvents.length} 个事件</span>
+    </div>
+    <div class="card-body">${itemsHtml}</div>
+    <div class="card-footer">
+      <button class="btn btn-cancel" onclick="this.closest('.view-result-card').remove()">关闭</button>
+    </div>
+  `;
+  cardContainer.appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  // Auto-remove after 15 seconds
+  setTimeout(() => {
+    if (card.parentNode) card.remove();
+  }, 15000);
+}
+
 // ---- Bootstrap ----
 async function init() {
   console.log('[App] Initializing Voice Calendar...');
@@ -357,16 +395,23 @@ async function executeIntent(finalResult) {
       const viewEnd = new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59);
       const viewEvents = await EventStore.query({ startDate: viewStart, endDate: viewEnd });
 
+      const dateLabel = `${datetime.getMonth() + 1}月${datetime.getDate()}日`;
       if (viewEvents.length === 0) {
-        TTS.speak(`${datetime.getMonth() + 1}月${datetime.getDate()}日没有安排`);
-        Toasts.show('当日无安排', { type: 'info' });
+        TTS.speak(`${dateLabel}没有安排`);
+        Toasts.show(`${dateLabel} 无安排`, { type: 'info' });
       } else {
-        const list = viewEvents.map(e =>
-          `${formatSpokenDateTime(e.startTime)}${e.title}`
-        ).join('，');
-        TTS.speak(`${datetime.getMonth() + 1}月${datetime.getDate()}日共有${viewEvents.length}个事件：${list}`);
+        // Build detailed list for TTS and visual toast
+        const itemDetails = viewEvents.map(e => {
+          const timeStr = `${String(e.startTime.getHours()).padStart(2, '0')}:${String(e.startTime.getMinutes()).padStart(2, '0')}`;
+          return `${timeStr} ${e.title}`;
+        }).join('、');
+
+        const spokenMsg = `${dateLabel}共有${viewEvents.length}个事件：${itemDetails}`;
+        TTS.speak(spokenMsg);
+        // Show event detail list in the card area (visual confirmation)
+        showViewResultCard(viewEvents, dateLabel);
+        // Highlight events on calendar
         CalendarController.highlightEvents(viewEvents.map(e => e.id));
-        Toasts.show(`找到${viewEvents.length}个事件`, { type: 'info' });
       }
       break;
     }
