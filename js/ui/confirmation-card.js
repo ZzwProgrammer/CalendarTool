@@ -17,6 +17,8 @@ let currentMode = 'normal'; // 'normal' | 'highlight' | 'multi-choice'
 let onConfirmCallback = null;
 let onCancelCallback = null;
 let multiChoiceCallback = null;
+let currentTitleInput = null;   // Direct reference to title input
+let currentTimeInput = null;    // Direct reference to time input
 
 export const ConfirmationCard = {
   init() {
@@ -91,29 +93,29 @@ export const ConfirmationCard = {
 
     // Title field (editable)
     const isTitleSuspect = suspectFields.includes('title');
-    body.appendChild(el('div', { className: 'card-field', dataset: { field: 'title' } }, [
-      el('label', {}, '事件标题'),
-      el('input', {
+    currentTitleInput = el('input', {
         type: 'text',
         className: `editable-field${isTitleSuspect ? ' field-suspect' : ''}`,
         value: final.title || '',
-        'data-field': 'title',
         placeholder: '事件名称',
-      }),
+      });
+    body.appendChild(el('div', { className: 'card-field', dataset: { field: 'title' } }, [
+      el('label', {}, '事件标题'),
+      currentTitleInput,
       isTitleSuspect ? el('span', { className: 'field-warning' }, '⚠️ 标题识别可能不准确，请核对') : null,
     ]));
 
     // Datetime field (editable)
     const isTimeSuspect = suspectFields.includes('datetime');
     const timeValue = final.datetime ? formatISOLocal(final.datetime) : '';
-    body.appendChild(el('div', { className: 'card-field', dataset: { field: 'datetime' } }, [
-      el('label', {}, '时间'),
-      el('input', {
+    currentTimeInput = el('input', {
         type: 'datetime-local',
         className: `editable-field${isTimeSuspect ? ' field-suspect' : ''}`,
         value: timeValue,
-        'data-field': 'datetime',
-      }),
+      });
+    body.appendChild(el('div', { className: 'card-field', dataset: { field: 'datetime' } }, [
+      el('label', {}, '时间'),
+      currentTimeInput,
       isTimeSuspect ? el('span', { className: 'field-warning' }, '⚠️ 时间识别可能不准确，请核对') : null,
     ]));
 
@@ -216,13 +218,11 @@ export const ConfirmationCard = {
   async confirm() {
     if (currentMode === 'multi-choice') return;
 
-    // Read fields from the card — scope query to card container to avoid grabbing wrong elements
-    const card = container ? container.querySelector('.card') : null;
-    const titleInput = card ? card.querySelector('[data-field="title"]') : null;
-    const timeInput = card ? card.querySelector('[data-field="datetime"]') : null;
+    // Use direct element references (set during show())
+    const titleInput = currentTitleInput;
+    const timeInput = currentTimeInput;
 
-    console.log('[Card] confirm() — card found:', !!card,
-      '| titleInput:', titleInput ? titleInput.value : '(null)',
+    console.log('[Card] confirm() — titleInput:', titleInput ? titleInput.value : '(null)',
       '| timeInput:', timeInput ? timeInput.value : '(null)');
     console.log('[Card] currentResult.final.title:', currentResult?.final?.title);
 
@@ -274,16 +274,11 @@ export const ConfirmationCard = {
    * Enter edit mode (all fields become editable).
    */
   enterEditMode() {
-    const inputs = container.querySelectorAll('.editable-field');
-    inputs.forEach(input => {
-      input.focus();
-      input.select();
-    });
-    // Focus the first suspect field, or title
-    const suspectField = container.querySelector('.field-suspect');
-    if (suspectField) {
-      suspectField.focus();
-      suspectField.select();
+    if (currentTitleInput) {
+      currentTitleInput.focus();
+      currentTitleInput.select();
+    } else if (currentTimeInput) {
+      currentTimeInput.focus();
     }
   },
 
@@ -295,6 +290,8 @@ export const ConfirmationCard = {
     currentResult = null;
     currentMode = 'normal';
     multiChoiceCallback = null;
+    currentTitleInput = null;
+    currentTimeInput = null;
     state.setState({ isCardVisible: false, cardMode: 'normal' });
     // Notify app to stop voice confirmation listening
     state.emit('card:closed');
