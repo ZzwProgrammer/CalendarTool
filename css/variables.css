@@ -1,0 +1,82 @@
+:root {
+  /* ---- Color Palette ---- */
+  --color-primary: #4A90D9;
+  --color-primary-hover: #3A7BC8;
+  --color-primary-light: #E8F0FE;
+  --color-primary-dark: #2B6CB0;
+  --color-success: #34A853;
+  --color-success-light: #E6F4EA;
+  --color-warning: #FBBC04;
+  --color-warning-light: #FEF7E0;
+  --color-danger: #EA4335;
+  --color-danger-light: #FCE8E6;
+
+  /* ---- Neutral Scale ---- */
+  --color-white: #FFFFFF;
+  --color-gray-50: #F8F9FA;
+  --color-gray-100: #F1F3F4;
+  --color-gray-200: #E8EAED;
+  --color-gray-300: #DADCE0;
+  --color-gray-400: #BDC1C6;
+  --color-gray-500: #9AA0A6;
+  --color-gray-600: #80868B;
+  --color-gray-700: #5F6368;
+  --color-gray-800: #3C4043;
+  --color-gray-900: #202124;
+
+  /* ---- Semantic ---- */
+  --color-bg: var(--color-gray-50);
+  --color-surface: var(--color-white);
+  --color-text: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-muted: var(--color-gray-500);
+  --color-border: var(--color-gray-200);
+
+  /* ---- Spacing Scale (4px base) ---- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans CJK SC', sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.12);
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+
+  /* ---- Layout ---- */
+  --sidebar-width: 320px;
+  --header-height: 56px;
+  --footer-height: 32px;
+  --toolbar-height: 52px;
+
+  /* ---- Calendar ---- */
+  --calendar-cell-min-height: 100px;
+  --event-dot-color-1: #4A90D9;
+  --event-dot-color-2: #34A853;
+  --event-dot-color-3: #EA4335;
+  --event-dot-color-4: #FBBC04;
+  --today-highlight: var(--color-primary);
+}

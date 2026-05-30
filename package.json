@@ -1,0 +1,26 @@
+{
+  "name": "calendartool",
+  "version": "1.0.0",
+  "description": "用户在日常日历管理中经常需要快速记录或查询事件，但传统的图形界面操作步骤繁琐。本项目旨在开发一个以**语音交互为核心**的日历管理工具，让用户通过自然语言即可完成事件的添加、删除和查看，提升效率和便捷性。",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZzwProgrammer/CalendarTool.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZzwProgrammer/CalendarTool/issues"
+  },
+  "homepage": "https://github.com/ZzwProgrammer/CalendarTool#readme",
+  "dependencies": {
+    "chrono-node": "^2.9.1"
+  }
+}

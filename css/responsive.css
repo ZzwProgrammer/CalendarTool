@@ -1,0 +1,129 @@
+/* ---- Responsive Design ---- */
+
+/* Tablet: sidebar narrows */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 280px;
+    --calendar-cell-min-height: 80px;
+  }
+}
+
+/* Mobile: sidebar becomes bottom drawer */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 48px;
+  }
+
+  #app-header h1 {
+    font-size: var(--font-size-lg);
+  }
+
+  #app-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  #sidebar {
+    border-right: none;
+    border-top: 2px solid var(--color-border);
+    max-height: 40vh;
+    order: 2;
+  }
+
+  #main-content {
+    order: 1;
+  }
+
+  #voice-controls {
+    padding: var(--space-md);
+  }
+
+  .mic-btn {
+    width: 64px;
+    height: 64px;
+  }
+
+  .calendar-month .calendar-cell {
+    min-height: 48px;
+  }
+
+  .calendar-month .day-number {
+    font-size: var(--font-size-xs);
+  }
+
+  .calendar-month .event-badge {
+    display: none;
+  }
+
+  .calendar-month .more-events {
+    display: inline;
+  }
+
+  .calendar-month .event-badges {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .event-popover {
+    position: fixed !important;
+    bottom: 50%;
+    left: 50% !important;
+    transform: translate(-50%, 50%);
+    max-width: 90vw;
+    top: auto !important;
+  }
+
+  #settings-overlay .settings-panel {
+    width: 95vw;
+    max-width: 95vw;
+  }
+}
+
+/* Small phone */
+@media (max-width: 480px) {
+  :root {
+    --header-height: 44px;
+    --calendar-cell-min-height: 40px;
+  }
+
+  #app-header h1 {
+    font-size: var(--font-size-md);
+  }
+
+  #sidebar {
+    max-height: 35vh;
+  }
+
+  .mic-btn {
+    width: 56px;
+    height: 56px;
+    border-width: 3px;
+  }
+
+  .mic-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  #calendar-toolbar h2 {
+    font-size: var(--font-size-sm);
+  }
+
+  .nav-btn, #nav-today {
+    width: 28px;
+    height: 28px;
+    font-size: var(--font-size-xs);
+  }
+
+  #view-switcher button {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .settings-panel {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+}

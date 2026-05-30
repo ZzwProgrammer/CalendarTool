@@ -1,0 +1,194 @@
+/* ---- App Container ---- */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Header ---- */
+#app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--header-height);
+  padding: 0 var(--space-lg);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+#app-header h1 {
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.header-controls {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.header-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  transition: background var(--transition-fast);
+}
+
+.header-controls button:hover {
+  background: var(--color-gray-100);
+}
+
+/* ---- Main Grid ---- */
+#app-main {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: 1fr;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ---- Sidebar ---- */
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ---- Main Content ---- */
+#main-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Calendar Toolbar ---- */
+#calendar-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  height: var(--toolbar-height);
+  padding: 0 var(--space-md);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+#calendar-toolbar h2 {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--font-size-md);
+  transition: background var(--transition-fast);
+}
+
+.nav-btn:hover {
+  background: var(--color-gray-100);
+}
+
+#nav-today {
+  padding: 0 var(--space-md);
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+#nav-today:hover {
+  background: var(--color-gray-100);
+}
+
+/* ---- View Switcher ---- */
+#view-switcher {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+#view-switcher button {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--font-size-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+#view-switcher button:last-child {
+  border-right: none;
+}
+
+#view-switcher button.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+#view-switcher button:not(.active):hover {
+  background: var(--color-gray-100);
+}
+
+/* ---- Calendar Container ---- */
+#calendar-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* ---- Footer ---- */
+#app-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--footer-height);
+  padding: 0 var(--space-md);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ---- Toast Container ---- */
+#toast-container {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+#toast-container > * {
+  pointer-events: auto;
+}

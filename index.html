@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="语音日历工具 — 通过中文语音快速管理日程">
+  <title>语音日历</title>
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/week-view.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/settings.css">
+  <link rel="stylesheet" href="css/toasts.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="theme-light">
+
+<div id="app">
+  <!-- Header -->
+  <header id="app-header">
+    <h1>🎤 语音日历</h1>
+    <div class="header-controls">
+      <button id="theme-toggle" title="切换主题" aria-label="切换主题">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+      </button>
+      <button id="settings-toggle" title="设置" aria-label="打开设置">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main id="app-main">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <!-- Voice Controls -->
+      <div id="voice-controls">
+        <button id="mic-btn" class="mic-btn mic-idle" title="点击开始语音输入" aria-label="语音输入">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <span id="voice-status">点击麦克风开始说话</span>
+        <div id="interim-text"></div>
+        <!-- Text fallback for unsupported browsers -->
+        <div id="text-fallback" class="hidden">
+          <input type="text" id="text-input" placeholder="输入日历命令（如：添加明天下午三点的会议）" aria-label="文本输入">
+        </div>
+      </div>
+
+      <!-- Confirmation Card Container -->
+      <div id="confirmation-card-container"></div>
+
+      <!-- Voice History -->
+      <div id="voice-history">
+        <h3>操作历史</h3>
+        <div class="history-list" id="history-list">
+          <div style="color:var(--color-text-muted);font-size:var(--font-size-sm);text-align:center;padding:var(--space-md);">
+            暂无操作记录
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Calendar Area -->
+    <section id="main-content">
+      <div id="calendar-toolbar">
+        <button class="nav-btn" id="nav-prev" title="上一页" aria-label="上一页">&lt;</button>
+        <button id="nav-today">今天</button>
+        <button class="nav-btn" id="nav-next" title="下一页" aria-label="下一页">&gt;</button>
+        <h2 id="current-date-label">2026年5月</h2>
+        <div id="view-switcher">
+          <button data-view="month" class="active">月</button>
+          <button data-view="week">周</button>
+          <button data-view="day">日</button>
+        </div>
+      </div>
+      <div id="calendar-container">
+        <div style="text-align:center;padding:48px;color:var(--color-text-muted);">加载中...</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer id="app-footer">
+    <span id="status-bar">就绪</span>
+    <span id="event-count">共 0 个事件</span>
+  </footer>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Settings Overlay -->
+<div id="settings-overlay" class="overlay hidden">
+  <div class="settings-panel">
+    <div class="settings-header">
+      <h2>设置</h2>
+      <button class="btn-close" id="settings-close">&times;</button>
+    </div>
+    <div class="settings-body">
+      <!-- LLM Settings -->
+      <div class="settings-section">
+        <h3>🤖 LLM 语义纠错</h3>
+        <label>
+          API 端点
+          <input type="url" id="setting-llm-endpoint" placeholder="https://api.deepseek.com/chat/completions">
+        </label>
+        <label>
+          API Key
+          <input type="password" id="setting-llm-apikey" placeholder="sk-...">
+        </label>
+        <label>
+          模型名称
+          <input type="text" id="setting-llm-model" placeholder="deepseek-chat">
+        </label>
+      </div>
+
+      <!-- Wake Word -->
+      <div class="settings-section">
+        <h3>🎙️ 唤醒词</h3>
+        <div class="toggle-row">
+          <span class="label-text">启用唤醒词模式（说"嘿日历"激活语音监听）</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-wake-word">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Theme -->
+      <div class="settings-section">
+        <h3>🎨 外观</h3>
+        <div class="toggle-row">
+          <span class="label-text">深色模式</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="setting-dark-theme">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-section">
+        <h3>⚠️ 数据管理</h3>
+        <button class="btn btn-danger" id="btn-clear-data" style="align-self:flex-start;">
+          清除所有本地数据
+        </button>
+      </div>
+    </div>
+    <div class="settings-footer">
+      <button class="btn btn-test" id="btn-test-llm">测试连接</button>
+      <button class="btn btn-save" id="settings-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- chrono-node vendor script -->
+<script src="js/vendor/chrono.min.js"></script>
+
+<!-- App Entry Point -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
