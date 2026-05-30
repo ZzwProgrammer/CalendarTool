@@ -122,9 +122,9 @@ function regexParse(text, referenceDate) {
   let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let dayMatched = '';
 
-  // 0. Absolute date: "6月1号", "12月31日", "6月1号下午三点", "6/1", "6-1"
-  // Matches date optionally followed by time period and time
-  const absDateMatch = text.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[号日]\s*(?:[上下中晚凌]午|凌晨|早上|晚上|中午)?\s*(?:\d{1,2}|[一二三四五六七八九十]{1,3})\s*[点:：]?\s*(?:\d{0,2}|[一二三四五六七八九])?\s*(?:分|半)?/);
+  // 0. Absolute date: "6月1号", "12月31日", "6月1号下午三点", "6月1号"
+  // Date part is required, time part is FULLY optional
+  const absDateMatch = text.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[号日](?:(?:[上下中晚凌]午|凌晨|早上|晚上|中午)?\s*(?:\d{1,2}|[一二三四五六七八九十]{1,3})\s*[点:：]\s*(?:\d{1,2}|[一二三四五六七八九])?\s*(?:分|半)?)?/);
   if (absDateMatch) {
     const absMonth = parseInt(absDateMatch[1]);
     const absDay = parseInt(absDateMatch[2]);
