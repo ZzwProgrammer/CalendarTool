@@ -122,6 +122,24 @@ function regexParse(text, referenceDate) {
   let targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let dayMatched = '';
 
+  // 0. Absolute date: "6月1号", "12月31日", "6月1号下午三点", "6/1", "6-1"
+  // Matches date optionally followed by time period and time
+  const absDateMatch = text.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[号日]\s*(?:[上下中晚凌]午|凌晨|早上|晚上|中午)?\s*(?:\d{1,2}|[一二三四五六七八九十]{1,3})\s*[点:：]?\s*(?:\d{0,2}|[一二三四五六七八九])?\s*(?:分|半)?/);
+  if (absDateMatch) {
+    const absMonth = parseInt(absDateMatch[1]);
+    const absDay = parseInt(absDateMatch[2]);
+    if (absMonth >= 1 && absMonth <= 12 && absDay >= 1 && absDay <= 31) {
+      targetDate.setMonth(absMonth - 1);
+      targetDate.setDate(absDay);
+      dayMatched = absDateMatch[0];
+      // If parsed date is in the past, assume next year
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (targetDate < todayStart) {
+        targetDate.setFullYear(targetDate.getFullYear() + 1);
+      }
+    }
+  }
+
   if (/今天|今个|今儿/.test(text)) {
     dayMatched = text.match(/今天|今个|今儿/)[0];
   } else if (/明天|明个|明儿|明田/.test(text)) {
@@ -153,11 +171,17 @@ function regexParse(text, referenceDate) {
     matchedText = weekdayMatch[0];
   }
 
-  // Detect time: X点, X点Y分, X点半, X:Y
-  const timeMatch = text.match(/(\d{1,2})\s*[点:：]\s*(\d{1,2})?\s*(分|半)?/);
+  // Detect time: X点, X点Y分, X点半, X:Y — supports both Arabic and Chinese digits
+  const cnDigitMap = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10, '十一': 11, '十二': 12 };
+  const timeMatch = text.match(/(\d{1,2}|[一二三四五六七八九十]{1,3})\s*[点:：]\s*(\d{1,2}|[一二三四五六七八九])?\s*(分|半)?/);
   if (timeMatch) {
-    let hour = parseInt(timeMatch[1]);
-    const minute = timeMatch[3] === '半' ? 30 : (timeMatch[2] ? parseInt(timeMatch[2]) : 0);
+    let hour = cnDigitMap[timeMatch[1]] !== undefined ? cnDigitMap[timeMatch[1]] : parseInt(timeMatch[1]);
+    let minute = 0;
+    if (timeMatch[3] === '半') {
+      minute = 30;
+    } else if (timeMatch[2]) {
+      minute = cnDigitMap[timeMatch[2]] !== undefined ? cnDigitMap[timeMatch[2]] : parseInt(timeMatch[2]);
+    }
 
     // Adjust for Chinese time conventions
     const isPM = /下午|晚上|傍晚|下五|下物/.test(text);
