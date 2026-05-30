@@ -45,6 +45,9 @@ export function showEventPopover(event, anchorEvent) {
     onClick: async () => {
       if (confirm(`确定要删除事件"${event.title}"吗？`)) {
         await EventStore.remove(event.id);
+        // Reload fresh events from DB and update state for instant UI refresh
+        const events = await EventStore.getAll();
+        state.setState({ events, totalEvents: events.length });
         state.emit('events:changed', 'removed', event);
         removePopover();
       }
