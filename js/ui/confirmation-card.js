@@ -164,6 +164,7 @@ export const ConfirmationCard = {
 
   /**
    * Show multi-choice card for delete operations with multiple matches.
+   * Supports multi-select checkboxes + "delete all" shortcut.
    */
   showMultiChoice(matches, callback) {
     if (!container) return;
@@ -172,40 +173,118 @@ export const ConfirmationCard = {
     multiChoiceCallback = callback;
     state.setState({ isCardVisible: true, cardMode: 'multi-choice' });
 
+    const updateCount = () => {
+      const cbs = card.querySelectorAll('.choice-checkbox:checked');
+      const el = card.querySelector('#selected-count');
+      if (el) el.textContent = `已选 ${cbs.length} 个`;
+    };
+
     const card = el('div', { className: 'card card-multi-choice' });
 
     card.appendChild(el('div', { className: 'card-header' },
-      el('span', { className: 'card-badge badge-intent-delete' }, '删除 — 请选择')));
+      el('span', { className: 'card-badge badge-intent-delete' }, `删除 — ${matches.length} 个事件`)));
 
     const body = el('div', { className: 'card-body' });
-    body.appendChild(el('p', { style: 'font-size:14px;margin-bottom:8px;' },
-      `找到 ${matches.length} 个匹配的事件，请选择要删除的事件：`));
+    body.appendChild(el('p', { style: 'font-size:14px;margin-bottom:4px;' },
+      '勾选要删除的事件，或点击下方按钮全部删除：'));
+
+    // Select all / deselect all row
+    const selectRow = el('div', { style: 'display:flex;gap:8px;margin-bottom:8px;' });
+    const selectAllBtn = el('button', {
+      style: 'font-size:11px;padding:2px 8px;border:1px solid var(--color-border);border-radius:4px;background:var(--color-surface);cursor:pointer;',
+      onClick: () => {
+        const cbs = card.querySelectorAll('.choice-checkbox');
+        const allChecked = Array.from(cbs).every(cb => cb.checked);
+        cbs.forEach(cb => { cb.checked = !allChecked; });
+        updateCount();
+      },
+    }, '全选/取消');
+    selectRow.appendChild(selectAllBtn);
+    body.appendChild(selectRow);
 
     const list = el('div', { className: 'choice-list' });
     matches.forEach((event, idx) => {
+      const dateStr = `${event.startTime.getMonth() + 1}/${event.startTime.getDate()}`;
       const timeStr = `${String(event.startTime.getHours()).padStart(2, '0')}:${String(event.startTime.getMinutes()).padStart(2, '0')}`;
       const item = el('div', {
         className: 'choice-item',
-        onClick: () => {
-          if (multiChoiceCallback) {
-            multiChoiceCallback(event);
+        style: 'cursor:pointer;',
+        onClick: (e) => {
+          if (e.target.tagName !== 'INPUT') {
+            const cb = item.querySelector('.choice-checkbox');
+            cb.checked = !cb.checked;
+            updateCount();
           }
-          ConfirmationCard.hide();
         },
       }, [
-        el('input', { type: 'radio', name: 'delete-choice', value: event.id }),
-        el('span', {}, `${timeStr} - ${event.title}`),
+        el('input', {
+          type: 'checkbox',
+          className: 'choice-checkbox',
+          value: event.id,
+          onClick: (e) => e.stopPropagation(),
+          onChange: () => updateCount(),
+        }),
+        el('span', { style: 'flex:1;' }, event.title),
+        el('span', { style: 'font-size:11px;color:var(--color-text-muted);' }, `${dateStr} ${timeStr}`),
       ]);
+      // Store event data on the item for later retrieval
+      item._eventData = event;
       list.appendChild(item);
     });
     body.appendChild(list);
+
+    // Selected count display
+    const countDisplay = el('span', {
+      id: 'selected-count',
+      style: 'font-size:12px;color:var(--color-text-secondary);',
+    }, '已选 0 个');
+    body.appendChild(countDisplay);
     card.appendChild(body);
 
-    card.appendChild(el('div', { className: 'card-footer' },
+    // Footer with cancel, delete selected, delete all buttons
+    card.appendChild(el('div', { className: 'card-footer', style: 'gap:8px;flex-wrap:wrap;' },
+      el('button', { className: 'btn btn-cancel', onClick: () => ConfirmationCard.cancel() }, '取消'),
       el('button', {
-        className: 'btn btn-cancel',
-        onClick: () => ConfirmationCard.cancel(),
-      }, '取消')));
+        className: 'btn btn-confirm',
+        style: 'background:var(--color-danger);border-color:var(--color-danger);',
+        onClick: async () => {
+          const checkboxes = card.querySelectorAll('.choice-checkbox:checked');
+          const selectedEvents = [];
+          checkboxes.forEach(cb => {
+            const item = cb.closest('.choice-item');
+            if (item && item._eventData) selectedEvents.push(item._eventData);
+          });
+          if (selectedEvents.length === 0) {
+            alert('请至少选择一个事件');
+            return;
+          }
+          if (!confirm(`确定删除选中的 ${selectedEvents.length} 个事件吗？`)) return;
+          for (const evt of selectedEvents) {
+            await EventStore.remove(evt.id);
+          }
+          const events = await EventStore.getAll();
+          state.setState({ events, totalEvents: events.length });
+          state.emit('events:changed', 'removed');
+          TTS.speak(`已删除${selectedEvents.length}个事件`);
+          ConfirmationCard.hide();
+        },
+      }, '删除选中'),
+      el('button', {
+        className: 'btn',
+        style: 'background:var(--color-danger);color:var(--color-white);border-color:var(--color-danger);',
+        onClick: async () => {
+          if (!confirm(`确定删除全部 ${matches.length} 个事件吗？此操作不可撤销！`)) return;
+          for (const evt of matches) {
+            await EventStore.remove(evt.id);
+          }
+          const events = await EventStore.getAll();
+          state.setState({ events, totalEvents: events.length });
+          state.emit('events:changed', 'removed');
+          TTS.speak(`已删除全部${matches.length}个事件`);
+          ConfirmationCard.hide();
+        },
+      }, '全部删除'),
+    ));
 
     container.innerHTML = '';
     container.appendChild(card);
