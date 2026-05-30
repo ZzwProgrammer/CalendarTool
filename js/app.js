@@ -248,6 +248,15 @@ async function executeIntent(finalResult) {
     }
 
     case 'delete': {
+      // 【诊断】列出所有已存储事件
+      const allEvents = await EventStore.getAll();
+      console.log('[Delete] === DB中共有', allEvents.length, '个事件 ===');
+      allEvents.forEach(e => {
+        console.log('  - id:', e.id, '| title:', e.title,
+          '| startTime:', e.startTime.toISOString(),
+          '| source:', e.source);
+      });
+
       // Build date range: use exact day if datetime is valid, otherwise search all events
       let dateFilter = {};
       if (datetime && !isNaN(datetime.getTime())) {
@@ -255,7 +264,13 @@ async function executeIntent(finalResult) {
           startDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 0, 0, 0),
           endDate: new Date(datetime.getFullYear(), datetime.getMonth(), datetime.getDate(), 23, 59, 59),
         };
+        console.log('[Delete] 搜索日期范围:', dateFilter.startDate.toISOString(), '~', dateFilter.endDate.toISOString());
+      } else {
+        console.log('[Delete] ⚠️ datetime 无效，直接全局搜索');
       }
+
+      console.log('[Delete] 搜索关键词:', JSON.stringify(title));
+      console.log('[Delete] dateFilter:', JSON.stringify(dateFilter));
 
       let matches = [];
       if (dateFilter.startDate) {
@@ -649,6 +664,20 @@ function toggleTheme() {
 
 // ---- Export for Settings Panel ----
 export { applyTheme, executeIntent };
+
+// ---- Global Debug Helpers ----
+window.dumpDB = async function() {
+  const events = await EventStore.getAll();
+  console.log('=== IndexedDB 中所有事件 (' + events.length + '条) ===');
+  console.table(events.map(e => ({
+    id: e.id?.slice(0, 8),
+    title: e.title,
+    startTime: e.startTime instanceof Date ? e.startTime.toLocaleString() : e.startTime,
+    source: e.source,
+  })));
+  return events;
+};
+console.log('💡 调试提示: 在控制台输入 dumpDB() 查看所有已存储的事件');
 
 // ---- Start ----
 document.addEventListener('DOMContentLoaded', init);
