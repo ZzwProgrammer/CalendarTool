@@ -66,8 +66,13 @@ export function extractTitle(correctedText, intentResult, timeResult) {
     .replace(/\d{1,2}\s*[点:：]\s*\d{0,2}\s*(分|半)?/g, '')
     .replace(/上午|下午|晚上|中午|凌晨|早上/g, '')
     .replace(/今天|明天|后天|昨天/g, '')
-    .replace(/周[一二三四五六日天]/g, '')
+    .replace(/下周[一二三四五六日天]/g, '')
+    .replace(/上?周[一二三四五六日天]/g, '')
     .replace(/下?星期[一二三四五六日天]/g, '')
+    .replace(/下?礼拜[一二三四五六日天]/g, '')
+    .replace(/\d{1,2}\s*[月号日]\s*\d{0,2}\s*[号日]?/g, '')
+    .replace(/\d{1,2}\s*[点:：]\s*\d{0,2}\s*(?:分|半)?/g, '')
+    .replace(/[一二三四五六七八九十]{1,3}\s*[点:：]\s*(?:[一二三四五六七八九])?\s*(?:分|半)?/g, '')
     .trim();
 
   // 7. Confidence assignment
