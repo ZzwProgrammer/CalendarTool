@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git commit -m 'fix: 确认卡片改用直接元素引用替代 DOM 查询 *)"
+      "Bash(git commit -m 'fix: 确认卡片改用直接元素引用替代 DOM 查询 *)",
+      "Bash(git commit -m 'feat: 操作历史支持点击展开查看完整内容 *)"
     ]
   }
 }
