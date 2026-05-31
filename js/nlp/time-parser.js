@@ -172,7 +172,9 @@ function regexParse(text, referenceDate) {
   }
 
   // Detect time: X点, X点Y分, X点半, X:Y — supports both Arabic and Chinese digits
-  const cnDigitMap = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10, '十一': 11, '十二': 12 };
+  const cnDigitMap = { '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10, '十一': 11, '十二': 12,
+    '十三': 13, '十四': 14, '十五': 15, '十六': 16, '十七': 17, '十八': 18, '十九': 19,
+    '二十': 20, '二十一': 21, '二十二': 22, '二十三': 23 };
   const timeMatch = text.match(/(\d{1,2}|[一二三四五六七八九十]{1,3})\s*[点:：]\s*(\d{1,2}|[一二三四五六七八九])?\s*(分|半)?/);
   if (timeMatch) {
     let hour = cnDigitMap[timeMatch[1]] !== undefined ? cnDigitMap[timeMatch[1]] : parseInt(timeMatch[1]);

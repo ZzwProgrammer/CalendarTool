@@ -7,6 +7,7 @@ import { CONFIG } from '../../config.js';
 import { KnowledgeBase } from './knowledge-base.js';
 import { levenshteinSimilarity, fuzzyContains } from '../../utils/levenshtein.js';
 import { INTENT_KEYWORDS } from '../intent.js';
+import { computeLayer1Confidence } from './confidence.js';
 
 let homophoneTable = null;
 
@@ -123,9 +124,11 @@ export async function correctLocal(originalText, referenceDate = new Date()) {
   const correctedChars = corrections.reduce(
     (sum, c) => sum + c.original.length, 0
   );
+  // Baseline: 0.70 when no corrections (honest — "no fixes" ≠ "perfect understanding")
+  // Each correction reduces confidence proportionally, floor at 0.25
   const homophoneScore = correctedChars === 0
-    ? 1.0
-    : Math.max(0.3, 1.0 - (correctedChars / Math.max(totalChars, 1)));
+    ? 0.70
+    : Math.max(0.25, 0.70 - (correctedChars / Math.max(totalChars, 1)));
 
   // Levenshtein score: best fuzzy match against all intent keywords
   const levenshteinScore = computeLevenshteinScore(text);
@@ -193,21 +196,6 @@ function computeChronoScore(text, referenceDate) {
   } catch (err) {
     return 0;
   }
-}
-
-/**
- * Compute Layer 1 combined confidence.
- */
-function computeLayer1Confidence({ homophoneScore, levenshteinScore, chronoScore }) {
-  const { L1_WEIGHT_HOMOPHONE, L1_WEIGHT_LEVENSHTEIN, L1_WEIGHT_CHRONO } = CONFIG;
-
-  const confidence = (
-    L1_WEIGHT_HOMOPHONE * homophoneScore +
-    L1_WEIGHT_LEVENSHTEIN * levenshteinScore +
-    L1_WEIGHT_CHRONO * chronoScore
-  );
-
-  return Math.max(0, Math.min(1, Math.round(confidence * 100) / 100));
 }
 
 export default { correctLocal };

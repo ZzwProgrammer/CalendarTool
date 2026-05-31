@@ -68,7 +68,8 @@ export function showEventPopover(event, anchorEvent) {
   popover.style.left = `${left}px`;
   popover.style.top = `${top}px`;
 
-  // Close on outside click
+  // Close on outside click — store handler reference on popover for cleanup
+  popover._outsideHandler = outsideHandler;
   setTimeout(() => {
     document.addEventListener('click', outsideHandler);
   }, 0);
@@ -84,7 +85,8 @@ export function removePopover() {
   if (activePopover) {
     activePopover.remove();
     activePopover = null;
-    document.removeEventListener('click', removePopover);
+    // Fix: remove the actual handler, not the wrapper function
+    document.removeEventListener('click', activePopover._outsideHandler || removePopover);
   }
 }
 
