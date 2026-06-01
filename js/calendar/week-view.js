@@ -5,7 +5,7 @@
 import el from '../utils/dom.js';
 import { isSameDay, formatISOLocal } from '../utils/date-utils.js';
 
-export function renderWeekView(container, { startDate, events, onSlotClick, onEventClick }) {
+export function renderWeekView(container, { startDate, events, highlightedIds, onSlotClick, onEventClick }) {
   container.innerHTML = '';
 
   const today = new Date();
@@ -91,8 +91,9 @@ export function renderWeekView(container, { startDate, events, onSlotClick, onEv
       const topPx = (startMinutes / 1440) * (24 * 48);
       const heightPx = (durationMinutes / 1440) * (24 * 48);
 
+      const isHighlighted = highlightedIds && highlightedIds.includes(event.id);
       const block = el('div', {
-        className: `event-block color-${idx % 4}`,
+        className: `event-block color-${idx % 4}${isHighlighted ? ' highlight-pulse' : ''}`,
         style: {
           top: `${topPx}px`,
           height: `${Math.max(heightPx, 18)}px`,

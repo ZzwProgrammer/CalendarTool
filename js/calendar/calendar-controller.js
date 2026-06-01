@@ -31,9 +31,10 @@ export const CalendarController = {
       currentDestroy = null;
     }
 
-    const { currentView, currentDate, events } = state.getState();
+    const { currentView, currentDate, events, highlightedEventIds } = state.getState();
     const opts = {
       events: events || [],
+      highlightedIds: highlightedEventIds || [],
       onDateClick: (date) => this._handleDateClick(date),
       onEventClick: (event) => this._handleEventClick(event),
       onSlotClick: (date) => this._handleSlotClick(date),
@@ -140,17 +141,23 @@ export const CalendarController = {
   },
 
   /**
-   * Highlight specific events in the calendar.
+   * Highlight specific events in the calendar and navigate to them.
    * @param {string[]} eventIds
    */
   highlightEvents(eventIds) {
-    // For now, scroll to the relevant date in the view
-    // Future: add visual highlight
+    // Store highlighted IDs in state for CSS class application
+    state.setState({ highlightedEventIds: eventIds });
+    // Navigate to first highlighted event
     const { events } = state.getState();
     const target = events.find(e => eventIds.includes(e.id));
     if (target) {
       this.navigateTo(target.startTime);
     }
+    // Auto-clear highlight after 8 seconds
+    setTimeout(() => {
+      state.setState({ highlightedEventIds: [] });
+      this.render();
+    }, 8000);
   },
 
   /**

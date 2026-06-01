@@ -223,4 +223,28 @@ export function count(storeName) {
   });
 }
 
-export default { open, put, get, getAll, delete: del, clear: clearStore, count };
+/**
+ * Get all records in an index range. Uses IndexedDB index for efficient range queries.
+ * @param {string} storeName
+ * @param {string} indexName - Index to query
+ * @param {IDBKeyRange|null} keyRange - Range to filter by
+ * @returns {Promise<Array>}
+ */
+export function getAllByIndex(storeName, indexName, keyRange) {
+  const store = getStore();
+  if (store instanceof StorageFallback) {
+    return store.getAll(storeName, indexName, keyRange);
+  }
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([storeName], 'readonly');
+    const objStore = tx.objectStore(storeName);
+    const index = objStore.index(indexName);
+    const request = index.getAll(keyRange || null);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export default { open, put, get, getAll, getAllByIndex, delete: del, clear: clearStore, count };

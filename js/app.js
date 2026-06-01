@@ -692,39 +692,93 @@ function wireEventListeners() {
     showEventPopover(event, window.event || { target: document.body });
   });
 
+  // ---- Manual Event Create/Edit via Mini Form ----
   state.on('calendar:dateClick', (date) => {
-    // Manual event creation flow
-    const title = prompt(`为 ${date.getMonth() + 1}月${date.getDate()}日 添加事件：\n请输入事件名称：`);
-    if (title && title.trim()) {
-      const hour = prompt('请输入时间（0-23时）：', '9');
-      if (hour !== null) {
-        const startTime = new Date(date);
-        startTime.setHours(parseInt(hour) || 9, 0, 0, 0);
-        EventStore.add({
-          title: title.trim(),
-          startTime,
-          source: 'manual',
-        }).then(async () => {
-          const events = await EventStore.getAll();
-          state.setState({ events, totalEvents: events.length });
-          state.emit('events:changed', 'added');
-          Toasts.show(`已手动添加事件：${title.trim()}`, { type: 'success' });
-        });
-      }
-    }
+    showManualEventForm(date);
+  });
+
+  state.on('calendar:slotClick', (date) => {
+    showManualEventForm(date);
   });
 
   state.on('calendar:eventEdit', (event) => {
-    const title = prompt('编辑事件名称：', event.title);
-    if (title && title.trim()) {
-      EventStore.update(event.id, { title: title.trim() }).then(async () => {
-        const events = await EventStore.getAll();
-        state.setState({ events, totalEvents: events.length });
-        state.emit('events:changed', 'updated');
-        Toasts.show('事件已更新', { type: 'success' });
-      });
-    }
+    showManualEventForm(null, event);
   });
+
+  /**
+   * Show a mini form for manual event creation or editing.
+   * @param {Date|null} date - Date to create event on (null for edit)
+   * @param {Object|null} editEvent - Existing event to edit (null for create)
+   */
+  function showManualEventForm(date, editEvent) {
+    const cardContainer = document.getElementById('confirmation-card-container');
+    if (!cardContainer) return;
+
+    const isEdit = !!editEvent;
+    const targetDate = isEdit ? editEvent.startTime : date;
+    const dateLabel = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    const timeLabel = isEdit
+      ? `${String(targetDate.getHours()).padStart(2, '0')}:${String(targetDate.getMinutes()).padStart(2, '0')}`
+      : '09:00';
+
+    // Remove existing form
+    const old = document.querySelector('.manual-event-form');
+    if (old) old.remove();
+
+    const form = document.createElement('div');
+    form.className = 'card manual-event-form';
+    form.style.animation = 'card-slide-in 0.3s ease';
+    form.innerHTML = `
+      <div class="card-header">
+        <span class="card-badge badge-intent-${isEdit ? 'reschedule' : 'add'}">${isEdit ? '编辑' : '新建'}</span>
+        <span style="font-size:13px;color:var(--color-text-secondary)">${dateLabel}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:12px;color:var(--color-text-secondary);">事件名称</label>
+          <input type="text" id="manual-event-title" class="editable-field"
+            value="${isEdit ? editEvent.title : ''}" placeholder="输入事件名称" style="width:100%;">
+          <label style="font-size:12px;color:var(--color-text-secondary);">时间</label>
+          <input type="time" id="manual-event-time" class="editable-field"
+            value="${timeLabel}" style="width:100%;">
+        </div>
+      </div>
+      <div class="card-footer" style="justify-content:space-between;">
+        <button class="btn btn-cancel" onclick="this.closest('.manual-event-form').remove()">取消</button>
+        <button class="btn btn-confirm" id="manual-event-save">${isEdit ? '保存' : '创建'}</button>
+      </div>
+    `;
+    cardContainer.appendChild(form);
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Wire save button
+    form.querySelector('#manual-event-save').addEventListener('click', async () => {
+      const title = form.querySelector('#manual-event-title').value.trim();
+      const time = form.querySelector('#manual-event-time').value;
+      if (!title) { alert('请输入事件名称'); return; }
+
+      const [h, m] = (time || '09:00').split(':').map(Number);
+      const startTime = new Date(targetDate);
+      startTime.setHours(h || 9, m || 0, 0, 0);
+
+      if (isEdit) {
+        await EventStore.update(editEvent.id, { title, startTime });
+      } else {
+        await EventStore.add({ title, startTime, source: 'manual' });
+      }
+
+      const events = await EventStore.getAll();
+      state.setState({ events, totalEvents: events.length });
+      state.emit('events:changed', isEdit ? 'updated' : 'added');
+      Toasts.show(isEdit ? '事件已更新' : `已添加：${title}`, { type: 'success' });
+      form.remove();
+    });
+
+    // Enter key to save
+    form.querySelector('#manual-event-title').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') form.querySelector('#manual-event-save').click();
+    });
+  }
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {

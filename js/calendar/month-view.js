@@ -16,7 +16,7 @@ import { formatISOLocal, isSameDay } from '../utils/date-utils.js';
  * @param {Function} options.onEventClick - (event: Object) => void
  * @returns {Function} destroy cleanup function
  */
-export function renderMonthView(container, { year, month, events, onDateClick, onEventClick }) {
+export function renderMonthView(container, { year, month, events, highlightedIds, onDateClick, onEventClick }) {
   container.innerHTML = '';
 
   const today = new Date();
@@ -82,8 +82,9 @@ export function renderMonthView(container, { year, month, events, onDateClick, o
     const badges = el('div', { className: 'event-badges' });
     const maxBadges = 3;
     dayEvents.slice(0, maxBadges).forEach((event, idx) => {
+      const isHighlighted = highlightedIds && highlightedIds.includes(event.id);
       const badge = el('div', {
-        className: `event-badge color-${idx % 4}`,
+        className: `event-badge color-${idx % 4}${isHighlighted ? ' highlight-pulse' : ''}`,
         title: event.title,
         onClick: (e) => {
           e.stopPropagation();

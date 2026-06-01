@@ -128,6 +128,18 @@
   color: var(--color-primary);
 }
 
+/* Highlight animation for view results */
+.event-badge.highlight-pulse {
+  animation: highlightPulse 0.8s ease-in-out 3;
+  box-shadow: 0 0 0 3px var(--color-primary);
+  z-index: 2;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--color-primary); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgba(74, 144, 217, 0.3); transform: scale(1.05); }
+}
+
 /* ---- Event popover ---- */
 .event-popover {
   position: absolute;

@@ -16,6 +16,7 @@ class AppState {
       interimText: '',
       lastCommand: null,
       commandHistory: [],
+      highlightedEventIds: [],
 
       // Correction
       activeCardResult: null,

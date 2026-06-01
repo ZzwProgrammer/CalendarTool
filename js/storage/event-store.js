@@ -1,7 +1,7 @@
 /**
  * Event Store — CRUD operations for calendar events
  */
-import { put, get, getAll, del, count } from './db-core.js';
+import { put, get, getAll, getAllByIndex, del, count } from './db-core.js';
 import uuid from '../utils/uuid.js';
 
 const STORE = 'events';
@@ -92,27 +92,37 @@ export const EventStore = {
    * @returns {Promise<Object[]>}
    */
   async query({ startDate, endDate, keyword } = {}) {
-    const all = await this.getAll();
-    let filtered = all;
+    let events;
 
     if (startDate && endDate) {
-      const start = startDate instanceof Date ? startDate.getTime() : new Date(startDate).getTime();
-      const end = endDate instanceof Date ? endDate.getTime() : new Date(endDate).getTime();
-      filtered = filtered.filter(e => {
-        const eventStart = e.startTime.getTime();
-        const eventEnd = e.endTime.getTime();
-        return eventStart <= end && eventEnd >= start;
+      // Use IndexedDB startTime index for O(log n) range query
+      const start = startDate instanceof Date ? startDate.toISOString() : new Date(startDate).toISOString();
+      const end = endDate instanceof Date ? endDate.toISOString() : new Date(endDate).toISOString();
+      const stored = await getAllByIndex(STORE, 'startTime', IDBKeyRange.bound(start, end));
+      events = stored.map(deserializeEvent).filter(Boolean);
+    } else {
+      // Fall back to full load for keyword-only queries
+      const stored = await getAll(STORE);
+      events = stored.map(deserializeEvent).filter(Boolean);
+    }
+
+    // Post-filter: overlap check + keyword filter
+    if (startDate && endDate) {
+      const s = startDate instanceof Date ? startDate.getTime() : new Date(startDate).getTime();
+      const e = endDate instanceof Date ? endDate.getTime() : new Date(endDate).getTime();
+      events = events.filter(ev => {
+        const es = ev.startTime.getTime();
+        const ee = ev.endTime.getTime();
+        return es <= e && ee >= s;
       });
     }
 
     if (keyword) {
       const lower = keyword.toLowerCase();
-      filtered = filtered.filter(e =>
-        e.title.toLowerCase().includes(lower)
-      );
+      events = events.filter(ev => ev.title.toLowerCase().includes(lower));
     }
 
-    return filtered.sort((a, b) => a.startTime - b.startTime);
+    return events.sort((a, b) => a.startTime - b.startTime);
   },
 
   /**

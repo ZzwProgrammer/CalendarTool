@@ -5,7 +5,7 @@
 import el from '../utils/dom.js';
 import { isSameDay, formatDateCN } from '../utils/date-utils.js';
 
-export function renderDayView(container, { date, events, onSlotClick, onEventClick }) {
+export function renderDayView(container, { date, events, highlightedIds, onSlotClick, onEventClick }) {
   container.innerHTML = '';
 
   const today = new Date();
@@ -69,8 +69,9 @@ export function renderDayView(container, { date, events, onSlotClick, onEventCli
     const topPx = (startMinutes / 1440) * (24 * 48);
     const heightPx = (durationMinutes / 1440) * (24 * 48);
 
+    const isHighlighted = highlightedIds && highlightedIds.includes(event.id);
     const block = el('div', {
-      className: `event-block color-${idx % 4}`,
+      className: `event-block color-${idx % 4}${isHighlighted ? ' highlight-pulse' : ''}`,
       style: {
         top: `${topPx}px`,
         height: `${Math.max(heightPx, 20)}px`,
